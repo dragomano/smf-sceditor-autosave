@@ -9,7 +9,7 @@
  * @copyright 2025 Bugo
  * @license https://opensource.org/licenses/MIT The MIT License
  *
- * @version 0.1
+ * @version 0.2
  */
 
 namespace Bugo;
@@ -29,7 +29,7 @@ class SCEditorAutoSave
 
 	public function sceditorOptions(array &$sce_options): void
 	{
-		loadJavaScriptFile('autosave.js', ['defer' => true]);
+		loadJavaScriptFile('autosave.js', ['defer' => true, 'minimize' => true]);
 
 		if (empty($sce_options['plugins']))
 			$sce_options['plugins'] = 'autosave';
