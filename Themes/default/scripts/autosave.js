@@ -1,2 +1,121 @@
-/* SCEditor v3.2.0 | (C) 2017, Sam Clarke | sceditor.com/license */
-!function(e){"use strict";var t="sce-autodraft-"+location.pathname+location.search;function u(e){localStorage.removeItem(e||t)}e.plugins.autosave=function(){var r,e=this,a=!1,n=t,s=864e5,i=function(e){localStorage.setItem(n,JSON.stringify(e))},c=function(){return JSON.parse(localStorage.getItem(n))};e.init=function(){var e=(r=this).opts&&r.opts.autosave||{};i=e.save||i,c=e.load||c,n=e.storageKey||n,s=e.expires||s;for(var t=0;t<localStorage.length;t++){var a,o=localStorage.key(t);!/^sce\-autodraft\-/.test(o)||(a=JSON.parse(localStorage.getItem(n)))&&a.time<Date.now()-s&&u(o)}},e.signalReady=function(){for(var e=r.getContentAreaContainer();e;){if(/form/i.test(e.nodeName)){e.addEventListener("submit",u.bind(null,n),!0);break}e=e.parentNode}var t=c();t?(a=!0,r.sourceMode(t.sourceMode),r.val(t.value,!1),r.focus(),t.sourceMode?r.sourceEditorCaret(t.caret):r.getRangeHelper().restoreRange(),a=!1):i({caret:this.sourceEditorCaret(),sourceMode:this.sourceMode(),value:r.val(null,!1),time:Date.now()})},e.signalValuechangedEvent=function(e){a||i({caret:this.sourceEditorCaret(),sourceMode:this.sourceMode(),value:e.detail.rawValue,time:Date.now()})}},e.plugins.autosave.clear=u}(sceditor);
+/**
+ * SCEditor AutoSave Plugin
+ * http://www.sceditor.com/
+ *
+ * Copyright (C) 2017, Sam Clarke (samclarke.com)
+ *
+ * SCEditor is licensed under the MIT license:
+ *	http://www.opensource.org/licenses/mit-license.php
+ *
+ * @author Sam Clarke
+ */
+(function (sceditor) {
+	'use strict';
+
+	var defaultKey = 'sce-autodraft-' + location.search;
+
+	function clear(key) {
+		localStorage.removeItem(key || defaultKey);
+	}
+
+	sceditor.plugins.autosave = function () {
+		var base = this;
+		var editor;
+		var isLoading = false;
+		var storageKey = defaultKey;
+		// 86400000 = 24 hrs (24 * 60 * 60 * 1000)
+		var expires = 86400000;
+		var saveHandler = function (value) {
+			localStorage.setItem(storageKey, JSON.stringify(value));
+
+			const isTopicMatch = /^\?topic=\d+\.\d+$/.test(location.search);
+
+			if (isTopicMatch) {
+				const form = document.getElementById('postmodify');
+				const match = form.action.match(/board=(\d+)/);
+				const boardValue = match ? match[1] : null;
+
+				boardValue && clear('sce-autodraft-?board=' + boardValue + ';action=post2')
+			}
+		};
+		var loadHandler = function () {
+			return JSON.parse(localStorage.getItem(storageKey));
+		};
+
+		function gc() {
+			for (var i = 0; i < localStorage.length; i++) {
+				var key = localStorage.key(i);
+
+				if (/^sce\-autodraft\-/.test(key)) {
+					var item = JSON.parse(localStorage.getItem(storageKey));
+
+					if (item && item.time < Date.now() - expires) {
+						clear(key);
+					}
+				}
+			}
+		}
+
+		base.init = function () {
+			editor = this;
+			var opts = editor.opts && editor.opts.autosave || {};
+
+			saveHandler = opts.save || saveHandler;
+			loadHandler = opts.load || loadHandler;
+			storageKey = opts.storageKey || storageKey;
+			expires = opts.expires || expires;
+
+			gc();
+		};
+
+		base.signalReady = function () {
+			// Add submit event listener to clear autosave
+			var parent = editor.getContentAreaContainer();
+			while (parent) {
+				if (/form/i.test(parent.nodeName)) {
+					parent.addEventListener(
+						'submit', clear.bind(null, storageKey), true
+					);
+					break;
+				}
+
+				parent = parent.parentNode;
+			}
+
+			var state = loadHandler();
+			if (state) {
+				isLoading = true;
+				editor.sourceMode(state.sourceMode);
+				editor.val(state.value, false);
+				//editor.focus();
+
+				if (state.sourceMode) {
+					///editor.sourceEditorCaret(state.caret);
+				} else {
+					//editor.getRangeHelper().restoreRange();
+				}
+				isLoading = false;
+			} else {
+				saveHandler({
+					caret: this.sourceEditorCaret(),
+					sourceMode: this.sourceMode(),
+					value: editor.val(null, false),
+					time: Date.now()
+				});
+			}
+		};
+
+		base.signalValuechangedEvent = function (e) {
+			if (!isLoading) {
+				saveHandler({
+					caret: this.sourceEditorCaret(),
+					sourceMode: this.sourceMode(),
+					value: e.detail.rawValue,
+					time: Date.now()
+				});
+			}
+		};
+	};
+
+	sceditor.plugins.autosave.clear = clear;
+}(sceditor));
