@@ -87,21 +87,8 @@
 				isLoading = true;
 				editor.sourceMode(state.sourceMode);
 				editor.val(state.value, false);
-				//editor.focus();
 
-				if (state.sourceMode) {
-					///editor.sourceEditorCaret(state.caret);
-				} else {
-					//editor.getRangeHelper().restoreRange();
-				}
 				isLoading = false;
-			} else {
-				saveHandler({
-					caret: this.sourceEditorCaret(),
-					sourceMode: this.sourceMode(),
-					value: editor.val(null, false),
-					time: Date.now()
-				});
 			}
 		};
 
