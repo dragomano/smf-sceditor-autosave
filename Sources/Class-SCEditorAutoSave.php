@@ -9,7 +9,7 @@
  * @copyright 2025 Bugo
  * @license https://opensource.org/licenses/MIT The MIT License
  *
- * @version 0.2
+ * @version 0.3
  */
 
 namespace Bugo;
