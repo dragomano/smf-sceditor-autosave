@@ -12,8 +12,8 @@
 (function (sceditor) {
 	'use strict';
 
-	var defaultKey = 'sce-autodraft-' + location.search;
-	var storageKeys = new Set();
+	const defaultKey = 'sce-autodraft-' + location.search;
+	const storageKeys = new Set();
 
 	function editorStorageKey(editorId, search) {
 		return 'sce-autodraft-' + JSON.stringify([
@@ -43,14 +43,14 @@
 	}
 
 	sceditor.plugins.autosave = function () {
-		var base = this;
-		var editor;
-		var textarea;
-		var isLoading = false;
-		var storageKey = defaultKey;
+		const base = this;
+		let editor;
+		let textarea;
+		let isLoading = false;
+		let storageKey = defaultKey;
 		// 86400000 = 24 hrs (24 * 60 * 60 * 1000)
-		var expires = 86400000;
-		var saveHandler = function (value) {
+		let expires = 86400000;
+		let saveHandler = function (value) {
 			localStorage.setItem(storageKey, JSON.stringify(value));
 
 			const isTopicMatch = /^\?topic=\d+\.\d+$/.test(location.search);
@@ -64,16 +64,16 @@
 				boardValue && clear(editorStorageKey('message', '?board=' + boardValue + ';action=post2'));
 			}
 		};
-		var loadHandler = function () {
+		let loadHandler = function () {
 			return read(storageKey);
 		};
 
 		function gc() {
-			for (var i = localStorage.length - 1; i >= 0; i--) {
-				var key = localStorage.key(i);
+			for (let i = localStorage.length - 1; i >= 0; i--) {
+				const key = localStorage.key(i);
 
 				if (/^sce\-autodraft\-/.test(key)) {
-					var item = read(key);
+					const item = read(key);
 
 					if (item && item.time < Date.now() - expires) {
 						clear(key);
@@ -84,14 +84,14 @@
 
 		base.init = function () {
 			editor = this;
-			var opts = editor.opts && editor.opts.autosave || {};
-			var textareas = Array.from(document.querySelectorAll('textarea')).filter(function (element) {
+			const opts = editor.opts && editor.opts.autosave || {};
+			const textareas = Array.from(document.querySelectorAll('textarea')).filter(function (element) {
 				return !element.closest('.sceditor-container');
 			});
 			textarea = textareas.find(function (element) {
 				return sceditor.instance(element) === editor;
 			});
-			var editorId = textarea.id || (textarea.name || 'textarea') + ':' + textareas.indexOf(textarea);
+			const editorId = textarea.id || (textarea.name || 'textarea') + ':' + textareas.indexOf(textarea);
 
 			saveHandler = opts.save || saveHandler;
 			loadHandler = opts.load || loadHandler;
@@ -104,7 +104,7 @@
 
 		base.signalReady = function () {
 			// Add submit event listener to clear autosave
-			var parent = editor.getContentAreaContainer();
+			let parent = editor.getContentAreaContainer();
 			while (parent) {
 				if (/form/i.test(parent.nodeName)) {
 					parent.addEventListener(
@@ -116,7 +116,7 @@
 				parent = parent.parentNode;
 			}
 
-			var state = loadHandler();
+			const state = loadHandler();
 			if (state) {
 				isLoading = true;
 				editor.sourceMode(state.sourceMode);
