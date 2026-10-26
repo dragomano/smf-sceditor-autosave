@@ -13,14 +13,39 @@
 	'use strict';
 
 	var defaultKey = 'sce-autodraft-' + location.search;
+	var storageKeys = new Set();
+
+	function editorStorageKey(editorId, search) {
+		return 'sce-autodraft-' + JSON.stringify([
+			location.pathname,
+			search === undefined ? location.search : search,
+			editorId
+		]);
+	}
 
 	function clear(key) {
-		localStorage.removeItem(key || defaultKey);
+		if (key) {
+			localStorage.removeItem(key);
+		} else {
+			storageKeys.forEach(function (storageKey) {
+				localStorage.removeItem(storageKey);
+			});
+			localStorage.removeItem(defaultKey);
+		}
+	}
+
+	function read(key) {
+		try {
+			return JSON.parse(localStorage.getItem(key));
+		} catch (error) {
+			return null;
+		}
 	}
 
 	sceditor.plugins.autosave = function () {
 		var base = this;
 		var editor;
+		var textarea;
 		var isLoading = false;
 		var storageKey = defaultKey;
 		// 86400000 = 24 hrs (24 * 60 * 60 * 1000)
@@ -30,24 +55,25 @@
 
 			const isTopicMatch = /^\?topic=\d+\.\d+$/.test(location.search);
 
-			if (isTopicMatch) {
-				const form = document.getElementById('postmodify');
+			if (isTopicMatch && textarea.form && textarea.form.id === 'postmodify'
+				&& (textarea.id === 'message' || textarea.id === 'quickReply')) {
+				const form = textarea.form;
 				const match = form.action.match(/board=(\d+)/);
 				const boardValue = match ? match[1] : null;
 
-				boardValue && clear('sce-autodraft-?board=' + boardValue + ';action=post2')
+				boardValue && clear(editorStorageKey('message', '?board=' + boardValue + ';action=post2'));
 			}
 		};
 		var loadHandler = function () {
-			return JSON.parse(localStorage.getItem(storageKey));
+			return read(storageKey);
 		};
 
 		function gc() {
-			for (var i = 0; i < localStorage.length; i++) {
+			for (var i = localStorage.length - 1; i >= 0; i--) {
 				var key = localStorage.key(i);
 
 				if (/^sce\-autodraft\-/.test(key)) {
-					var item = JSON.parse(localStorage.getItem(storageKey));
+					var item = read(key);
 
 					if (item && item.time < Date.now() - expires) {
 						clear(key);
@@ -59,10 +85,18 @@
 		base.init = function () {
 			editor = this;
 			var opts = editor.opts && editor.opts.autosave || {};
+			var textareas = Array.from(document.querySelectorAll('textarea')).filter(function (element) {
+				return !element.closest('.sceditor-container');
+			});
+			textarea = textareas.find(function (element) {
+				return sceditor.instance(element) === editor;
+			});
+			var editorId = textarea.id || (textarea.name || 'textarea') + ':' + textareas.indexOf(textarea);
 
 			saveHandler = opts.save || saveHandler;
 			loadHandler = opts.load || loadHandler;
-			storageKey = opts.storageKey || storageKey;
+			storageKey = opts.storageKey || editorStorageKey(editorId);
+			storageKeys.add(storageKey);
 			expires = opts.expires || expires;
 
 			gc();
@@ -87,8 +121,21 @@
 				isLoading = true;
 				editor.sourceMode(state.sourceMode);
 				editor.val(state.value, false);
+				//editor.focus();
 
+				if (state.sourceMode) {
+					///editor.sourceEditorCaret(state.caret);
+				} else {
+					//editor.getRangeHelper().restoreRange();
+				}
 				isLoading = false;
+			} else {
+				saveHandler({
+					caret: this.sourceEditorCaret(),
+					sourceMode: this.sourceMode(),
+					value: editor.val(null, false),
+					time: Date.now()
+				});
 			}
 		};
 
