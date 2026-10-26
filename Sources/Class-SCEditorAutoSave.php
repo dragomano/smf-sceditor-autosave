@@ -6,10 +6,10 @@
  * @package SCEditor AutoSave
  * @link https://github.com/dragomano/smf-sceditor-autosave
  * @author Bugo <bugo@dragomano.ru>
- * @copyright 2025 Bugo
+ * @copyright 2025-2026 Bugo
  * @license https://opensource.org/licenses/MIT The MIT License
  *
- * @version 0.3
+ * @version 0.4
  */
 
 namespace Bugo;
@@ -24,16 +24,17 @@ class SCEditorAutoSave
 {
 	public function hooks(): void
 	{
-		add_integration_function('integrate_sceditor_options', self::class . '::sceditorOptions#', false, __FILE__);
+		add_integration_function('integrate_sceditor_options', self::class . '::sceditorOptions#', false);
 	}
 
 	public function sceditorOptions(array &$sce_options): void
 	{
 		loadJavaScriptFile('autosave.js', ['defer' => true, 'minimize' => true]);
 
-		if (empty($sce_options['plugins']))
+		if (empty($sce_options['plugins'])) {
 			$sce_options['plugins'] = 'autosave';
-		else
+		} else {
 			$sce_options['plugins'] .= ',autosave';
+		}
 	}
 }
